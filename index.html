@@ -142,7 +142,7 @@
 <nav>
   <a class="nav-logo" href="#"><span>💰</span> SmartDailySavings</a>
   <div class="nav-search">
-    <input type="text" placeholder="Search deals — groceries, medicines, gadgets..."/>
+    <input type="text" id="searchInput" placeholder="Search deals — groceries, medicines, gadgets..."/>
   </div>
   <div class="nav-links">
     <a href="#deals">Deals</a>
@@ -496,17 +496,87 @@
 </footer>
 
 <script>
-  function joinWaitlist(){
-    const email = document.getElementById('heroEmail').value;
+  async function joinWaitlist(){
+    const emailInput = document.getElementById('heroEmail');
+    const email = emailInput.value;
     const form = document.querySelector('.hero-form');
     const ok = document.getElementById('notify-ok');
+    
     if(email && email.includes('@')){
-      form.style.display = 'none';
-      ok.style.display = 'block';
+      try {
+        const response = await fetch('http://127.0.0.1:8000/waitlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: email }),
+        });
+        
+        if (response.ok) {
+          form.style.display = 'none';
+          ok.style.display = 'block';
+          ok.textContent = "🎉 You're on the list! We'll email you when we launch.";
+        } else {
+          alert('Something went wrong. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Could not connect to the server. Make sure the backend is running.');
+      }
     } else {
       window.scrollTo({top:0,behavior:'smooth'});
-      setTimeout(()=>document.getElementById('heroEmail').focus(), 400);
+      setTimeout(()=>emailInput.focus(), 400);
     }
+  }
+
+  // Handle Search
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('keypress', async (e) => {
+    if (e.key === 'Enter') {
+      const query = searchInput.value;
+      if (!query) return;
+
+      const dealsGrid = document.querySelector('.deals-grid');
+      dealsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Searching for deals...</div>';
+
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/deals?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        renderDeals(data.results);
+      } catch (error) {
+        console.error('Error fetching deals:', error);
+        dealsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--red);">Error connecting to backend.</div>';
+      }
+    }
+  });
+
+  function renderDeals(deals) {
+    const dealsGrid = document.querySelector('.deals-grid');
+    if (deals.length === 0) {
+      dealsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">No deals found.</div>';
+      return;
+    }
+
+    dealsGrid.innerHTML = deals.map(deal => `
+      <div class="deal-card">
+        <div class="deal-img">📦
+          <span class="deal-badge">${deal.discount}</span>
+        </div>
+        <div class="deal-body">
+          <div class="deal-platform">${deal.platform}</div>
+          <div class="deal-title">${deal.title}</div>
+          <div class="deal-prices">
+            <span class="deal-price">${deal.price}</span>
+            <span class="deal-mrp">${deal.mrp}</span>
+          </div>
+          <div class="deal-footer">
+            <span class="deal-votes">👍 ${deal.votes}</span>
+            <button class="deal-btn">Get Deal</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
   }
   document.querySelectorAll('.deal-btn').forEach(btn=>{
     btn.addEventListener('click', e=>{

@@ -1,9 +1,26 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+from pydantic import BaseModel
 from scraper import fetch_deals
 
 app = FastAPI(title="Smart Daily Savings API")
+
+# Models for API validation and automatic docs
+class Deal(BaseModel):
+    platform: str
+    title: str
+    price: str
+    mrp: str
+    discount: str
+    category: str
+    votes: int
+    link: Optional[str] = None
+
+class DealsResponse(BaseModel):
+    query: str
+    results: List[Deal]
+    count: int
 
 # Enable CORS
 app.add_middleware(
@@ -18,7 +35,7 @@ app.add_middleware(
 async def root():
     return {"message": "Welcome to Smart Daily Savings API", "version": "1.0.0"}
 
-@app.get("/deals")
+@app.get("/deals", response_model=DealsResponse)
 async def get_deals(q: str = Query(..., description="Search query for deals")):
     """
     Fetch deals from various platforms based on the search query.
