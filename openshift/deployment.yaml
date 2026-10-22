@@ -4,6 +4,8 @@ metadata:
   name: smartdailysavings-backend
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: smartdailysavings-backend
@@ -12,8 +14,9 @@ spec:
       labels:
         app: smartdailysavings-backend
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
+      securityContext:
+        fsGroup: 1012830000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: backend
           image: ghcr.io/harieshs23/smartdailysavings-backend:latest
@@ -60,8 +63,6 @@ spec:
       labels:
         app: smartdailysavings-frontend
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
       containers:
         - name: frontend
           image: ghcr.io/harieshs23/smartdailysavings-frontend:latest

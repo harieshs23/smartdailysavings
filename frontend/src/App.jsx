@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 const defaultDeals = [
   { platform: 'BigBasket', title: 'Fortune Sunlite Refined Sunflower Oil 5L', price: '₹549', mrp: '₹620', discount: '54% OFF', votes: 143 },
