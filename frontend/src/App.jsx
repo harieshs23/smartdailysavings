@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
@@ -20,13 +20,6 @@ function App() {
   const [deals, setDeals] = useState(defaultDeals)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [currentDateTime, setCurrentDateTime] = useState(() => new Date().toLocaleString())
-
-  // Update the clock every minute
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentDateTime(new Date().toLocaleString()), 60000)
-    return () => clearInterval(timer)
-  }, [])
 
   async function handleJoinWaitlist(e) {
     e.preventDefault()
@@ -117,7 +110,6 @@ function App() {
       <main id="deals" className="content">
         <div className="section-heading">
           <h2>🔥 Top Deals Today</h2>
-          <span className="heading-date">{currentDateTime}</span>
           <a href="#">View all</a>
         </div>
 
