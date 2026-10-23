@@ -8,9 +8,10 @@ const defaultDeals = [
   { platform: '1mg', title: 'Metformin 500mg Generic — 60 tablets', price: '₹38', mrp: '₹245', discount: 'GENERIC', votes: 89, category: 'Medicine' },
   { platform: 'Flipkart', title: 'boAt Airdopes 141 True Wireless Earbuds', price: '₹899', mrp: '₹1,499', discount: '40% OFF', votes: 312, category: 'Electronics' },
   { platform: 'Meesho', title: 'Cotton Solid Baseball Cap — Unisex', price: '₹129', mrp: '₹399', discount: '67% OFF', votes: 204, category: 'Fashion' },
+  { platform: 'Amazon', title: 'Prestige Omega Deluxe Granite Cookware Set', price: '₹1,799', mrp: '₹2,999', discount: '40% OFF', votes: 451, category: 'Home & Kitchen', isNew: true },
 ]
 
-const categories = ['All', 'Groceries', 'Medicine', 'Electronics', 'Fashion']
+const categories = ['All', 'Groceries', 'Medicine', 'Electronics', 'Fashion', 'Home & Kitchen']
 
 function App() {
   const [email, setEmail] = useState('')
