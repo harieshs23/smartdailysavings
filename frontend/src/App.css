@@ -172,6 +172,14 @@
   font-weight: 700;
 }
 
+.heading-date {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
 .category-pills {
   display: flex;
   gap: 10px;
