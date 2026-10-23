@@ -172,6 +172,49 @@
   font-weight: 700;
 }
 
+.category-pills {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 18px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pill:hover {
+  border-color: #d82a1f;
+  color: #d82a1f;
+}
+
+.pill-active {
+  background: #d82a1f;
+  color: white;
+  border-color: #d82a1f;
+}
+
+.new-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #1f7a4d;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .deal-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -184,6 +227,7 @@
   border-radius: 14px;
   padding: 18px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  position: relative;
 }
 
 .deal-emoji {

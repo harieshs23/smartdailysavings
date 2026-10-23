@@ -4,15 +4,18 @@ import './App.css'
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 const defaultDeals = [
-  { platform: 'BigBasket', title: 'Fortune Sunlite Refined Sunflower Oil 5L', price: '₹549', mrp: '₹620', discount: '54% OFF', votes: 143 },
-  { platform: '1mg', title: 'Metformin 500mg Generic — 60 tablets', price: '₹38', mrp: '₹245', discount: 'GENERIC', votes: 89 },
-  { platform: 'Flipkart', title: 'boAt Airdopes 141 True Wireless Earbuds', price: '₹899', mrp: '₹1,499', discount: '40% OFF', votes: 312 },
-  { platform: 'Meesho', title: 'Cotton Solid Baseball Cap — Unisex', price: '₹129', mrp: '₹399', discount: '67% OFF', votes: 204 },
+  { platform: 'BigBasket', title: 'Fortune Sunlite Refined Sunflower Oil 5L', price: '₹549', mrp: '₹620', discount: '54% OFF', votes: 143, category: 'Groceries', isNew: true },
+  { platform: '1mg', title: 'Metformin 500mg Generic — 60 tablets', price: '₹38', mrp: '₹245', discount: 'GENERIC', votes: 89, category: 'Medicine' },
+  { platform: 'Flipkart', title: 'boAt Airdopes 141 True Wireless Earbuds', price: '₹899', mrp: '₹1,499', discount: '40% OFF', votes: 312, category: 'Electronics' },
+  { platform: 'Meesho', title: 'Cotton Solid Baseball Cap — Unisex', price: '₹129', mrp: '₹399', discount: '67% OFF', votes: 204, category: 'Fashion' },
 ]
+
+const categories = ['All', 'Groceries', 'Medicine', 'Electronics', 'Fashion']
 
 function App() {
   const [email, setEmail] = useState('')
   const [query, setQuery] = useState('iphone')
+  const [category, setCategory] = useState('All')
   const [deals, setDeals] = useState(defaultDeals)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -109,25 +112,40 @@ function App() {
           <a href="#">View all</a>
         </div>
 
+        <div className="category-pills">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              className={category === cat ? 'pill-active' : 'pill'}
+              onClick={() => setCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
         <div className="deal-grid">
           {deals.length === 0 ? (
             <div className="empty-state">No deals found.</div>
           ) : (
-            deals.map((deal, index) => (
-              <article key={`${deal.platform}-${index}`} className="deal-card">
-                <div className="deal-emoji">📦</div>
-                <div className="deal-platform">{deal.platform}</div>
-                <h3>{deal.title}</h3>
-                <div className="deal-pricing">
-                  <span className="price">{deal.price}</span>
-                  <span className="mrp">{deal.mrp}</span>
-                </div>
-                <div className="deal-footer">
-                  <span className="discount">{deal.discount}</span>
-                  <span className="votes">👍 {deal.votes}</span>
-                </div>
-              </article>
-            ))
+            deals
+              .filter((deal) => category === 'All' || deal.category === category)
+              .map((deal, index) => (
+                <article key={`${deal.platform}-${index}`} className="deal-card">
+                  {deal.isNew && <span className="new-badge">New</span>}
+                  <div className="deal-emoji">📦</div>
+                  <div className="deal-platform">{deal.platform}</div>
+                  <h3>{deal.title}</h3>
+                  <div className="deal-pricing">
+                    <span className="price">{deal.price}</span>
+                    <span className="mrp">{deal.mrp}</span>
+                  </div>
+                  <div className="deal-footer">
+                    <span className="discount">{deal.discount}</span>
+                    <span className="votes">👍 {deal.votes}</span>
+                  </div>
+                </article>
+              ))
           )}
         </div>
       </main>

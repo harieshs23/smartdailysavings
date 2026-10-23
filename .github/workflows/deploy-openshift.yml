@@ -1,0 +1,32 @@
+name: Deploy to OpenShift
+
+on:
+  workflow_run:
+    workflows: ["Publish container images"]
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install OpenShift CLI (oc)
+        run: |
+          curl -L https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz -o oc.tar.gz
+          tar -xzf oc.tar.gz
+          chmod +x oc
+          sudo mv oc /usr/local/bin/
+          oc version --client
+
+      - name: Log in to OpenShift
+        run: |
+          oc login "${{ secrets.OPENSHIFT_SERVER }}" --token="${{ secrets.OPENSHIFT_TOKEN }}" --insecure-skip-tls-verify=true
+
+      - name: Apply OpenShift deployment
+        run: |
+          oc apply -f openshift/deployment.yaml
