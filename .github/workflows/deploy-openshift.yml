@@ -30,3 +30,8 @@ jobs:
       - name: Apply OpenShift deployment
         run: |
           oc apply -f openshift/deployment.yaml
+
+      - name: Restart deployments to pull latest images
+        run: |
+          oc rollout restart deployment/smartdailysavings-backend
+          oc rollout restart deployment/smartdailysavings-frontend
