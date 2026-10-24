@@ -47,6 +47,10 @@ Important:
   Its `fsGroup` must be permitted by the project's OpenShift security policy and
   supported by the PVC storage driver; update `1012830000` in the manifest if the
   project uses a different permitted group.
+- Redis writes its append-only files to the `smartdailysavings-redis-data`
+  1 GiB PVC mounted at `/data`. Its `fsGroup` must be permitted by the project's
+  OpenShift security policy and supported by the PVC storage driver; update
+  `1012830000` in the manifest if the project uses a different permitted group.
 - Nginx listens on port 8080 so it can run under OpenShift's restricted security context.
 - The Routes in `deployment.yaml` currently do not configure TLS. To serve HTTPS,
   configure TLS termination on the Routes for your cluster.

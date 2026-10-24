@@ -8,7 +8,7 @@
    - `OPENSHIFT_SERVER`
    - `OPENSHIFT_TOKEN`
 4. Ensure the OpenShift project has enough quota for:
-   - Postgres PVC
+   - Postgres and Redis PVCs
    - Redis deployment
    - backend deployment
    - frontend deployment

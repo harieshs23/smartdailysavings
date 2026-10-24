@@ -61,6 +61,17 @@ spec:
       targetPort: 5432
       protocol: TCP
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smartdailysavings-redis-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -75,12 +86,22 @@ spec:
       labels:
         app: smartdailysavings-redis
     spec:
+      securityContext:
+        fsGroup: 1012830000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: redis
           image: redis:7-alpine
           ports:
             - containerPort: 6379
-          command: ["redis-server", "--appendonly", "yes"]
+          command: ["redis-server", "--appendonly", "yes", "--dir", "/data"]
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: smartdailysavings-redis-data
 ---
 apiVersion: v1
 kind: Service
