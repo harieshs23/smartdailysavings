@@ -1,3 +1,95 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smartdailysavings-postgres-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartdailysavings-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartdailysavings-postgres
+  template:
+    metadata:
+      labels:
+        app: smartdailysavings-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: smartdailysavings
+            - name: POSTGRES_USER
+              value: smartdailysavings
+            - name: POSTGRES_PASSWORD
+              value: smartdailysavings
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: smartdailysavings-postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartdailysavings-postgres
+spec:
+  selector:
+    app: smartdailysavings-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartdailysavings-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartdailysavings-redis
+  template:
+    metadata:
+      labels:
+        app: smartdailysavings-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          command: ["redis-server", "--appendonly", "yes"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartdailysavings-redis
+spec:
+  selector:
+    app: smartdailysavings-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,15 +118,16 @@ spec:
           env:
             - name: PORT
               value: "8000"
-            - name: DATABASE_PATH
-              value: /data/smartdailysavings.db
-          volumeMounts:
-            - name: sqlite-data
-              mountPath: /data
-      volumes:
-        - name: sqlite-data
-          persistentVolumeClaim:
-            claimName: smartdailysavings-data
+            - name: DATABASE_URL
+              value: postgresql://smartdailysavings:smartdailysavings@smartdailysavings-postgres:5432/smartdailysavings
+            - name: CELERY_BROKER_URL
+              value: redis://smartdailysavings-redis:6379/0
+            - name: CELERY_RESULT_BACKEND
+              value: redis://smartdailysavings-redis:6379/0
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://smartdailysavings-otel-collector:4317
+            - name: MODEL_PROVIDER
+              value: openai
 ---
 apiVersion: v1
 kind: Service
@@ -93,17 +186,6 @@ spec:
     name: smartdailysavings-frontend
   port:
     targetPort: http
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: smartdailysavings-data
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
