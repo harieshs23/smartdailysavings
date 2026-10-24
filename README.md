@@ -31,5 +31,6 @@ oc get routes
 The manifests run the FastAPI backend and Nginx-served frontend. The backend
 uses a 1 GiB persistent volume for SQLite, and the frontend proxies API
 requests to the backend Service. Routes in the current manifest do not configure
-TLS. For full setup details and how to refresh deployments after new images are
-published, see [OpenShift deployment notes](./openshift/README.md).
+TLS. This project is designed for local experimentation and OpenShift demo
+workloads. For full setup details and how to refresh deployments after new images
+are published, see [OpenShift deployment notes](./openshift/README.md).
