@@ -124,8 +124,6 @@ spec:
               value: redis://smartdailysavings-redis:6379/0
             - name: CELERY_RESULT_BACKEND
               value: redis://smartdailysavings-redis:6379/0
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://smartdailysavings-otel-collector:4317
             - name: MODEL_PROVIDER
               value: openai
 ---
