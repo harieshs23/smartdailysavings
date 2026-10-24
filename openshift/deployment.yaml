@@ -23,6 +23,9 @@ spec:
       labels:
         app: smartdailysavings-postgres
     spec:
+      securityContext:
+        fsGroup: 1012830000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: postgres
           image: postgres:16-alpine
@@ -35,6 +38,8 @@ spec:
               value: smartdailysavings
             - name: POSTGRES_PASSWORD
               value: smartdailysavings
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data

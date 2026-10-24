@@ -42,6 +42,11 @@ browser requests remain same-origin.
 Important:
 - The backend Service exposes port 80 and forwards traffic to container port 8000.
 - The SQLite database is stored on a 1 GiB PersistentVolumeClaim.
+- PostgreSQL stores its cluster in the `pgdata` subdirectory of its PVC, leaving
+  filesystem-created entries such as `lost+found` outside the database directory.
+  Its `fsGroup` must be permitted by the project's OpenShift security policy and
+  supported by the PVC storage driver; update `1012830000` in the manifest if the
+  project uses a different permitted group.
 - Nginx listens on port 8080 so it can run under OpenShift's restricted security context.
 - The Routes in `deployment.yaml` currently do not configure TLS. To serve HTTPS,
   configure TLS termination on the Routes for your cluster.
