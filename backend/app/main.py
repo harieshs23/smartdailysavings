@@ -11,10 +11,10 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from pydantic import BaseModel, EmailStr
 
-from app.database import get_connection, init_db
+from app.db import SessionLocal, get_db, Base
+from app.models import Deal, Waitlist
+from sqlalchemy import select, text
 from app.scraper import get_mock_deals
-
-init_db()
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_BACKEND_URL = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
@@ -61,7 +61,7 @@ class WaitlistRequest(BaseModel):
 
 @app.on_event("startup")
 def startup_event():
-    init_db()
+    pass
 
 
 @app.get("/")
@@ -80,47 +80,53 @@ def health():
 def get_deals(q: str = Query(..., min_length=1)):
     with tracer.start_as_current_span("get_deals") as span:
         span.set_attribute("query", q)
+        db = SessionLocal()
         try:
-            task = fetch_deals_task.delay(q, 6)
-            return {
-                "query": q,
-                "results": get_mock_deals(q, 6),
-                "count": 6,
-                "task_id": task.id,
-                "status": "queued",
-            }
-        except Exception:
-            conn = get_connection()
-            rows = conn.execute(
-                "SELECT platform, title, price, mrp, discount, category, votes, link FROM deals WHERE title LIKE ? ORDER BY votes DESC LIMIT 12",
-                (f"%{q}%",),
-            ).fetchall()
-            conn.close()
+            try:
+                rows = db.execute(
+                    select(Deal).where(Deal.title.ilike(f"%{q}%")).order_by(Deal.votes.desc()).limit(12)
+                ).scalars().all()
+                deals = [
+                    {
+                        "platform": d.platform,
+                        "title": d.title,
+                        "price": d.price,
+                        "mrp": d.mrp,
+                        "discount": d.discount,
+                        "category": d.category,
+                        "votes": d.votes,
+                        "link": d.link,
+                    }
+                    for d in rows
+                ]
+            except Exception:
+                deals = []
 
-            deals = [dict(row) for row in rows]
             if len(deals) < 6:
                 deals.extend(get_mock_deals(q, 6 - len(deals)))
-
             return {"query": q, "results": deals, "count": len(deals)}
+        finally:
+            db.close()
 
 
 @app.post("/waitlist")
 def join_waitlist(payload: WaitlistRequest):
-    conn = get_connection()
+    db = SessionLocal()
     try:
-        conn.execute(
-            "INSERT OR IGNORE INTO waitlist (email) VALUES (?)",
-            (payload.email,),
-        )
-        conn.commit()
+        existing = db.execute(select(Waitlist).where(Waitlist.email == payload.email)).scalar_one_or_none()
+        if existing is None:
+            db.add(Waitlist(email=payload.email))
+            db.commit()
         return {"status": "success", "message": "Successfully joined the waitlist!"}
     finally:
-        conn.close()
+        db.close()
 
 
 @app.get("/waitlist")
 def list_waitlist():
-    conn = get_connection()
-    rows = conn.execute("SELECT email, created_at FROM waitlist ORDER BY created_at DESC LIMIT 10").fetchall()
-    conn.close()
-    return {"results": [dict(row) for row in rows]}
+    db = SessionLocal()
+    try:
+        rows = db.execute(select(Waitlist.email, Waitlist.created_at).order_by(Waitlist.created_at.desc()).limit(10)).all()
+        return {"results": [{"email": row.email, "created_at": row.created_at.isoformat()} for row in rows]}
+    finally:
+        db.close()
