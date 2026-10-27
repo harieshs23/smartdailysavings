@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartdailysavings-config
+data:
+  DATABASE_URL: postgresql://smartdailysavings:smartdailysavings@postgres:5432/smartdailysavings
+  NEON_DATABASE_URL: postgresql://neondb_owner:npg_DiAT4f9gLXQU@ep-broad-lab-b5dwa32t-pooler.c-7.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require

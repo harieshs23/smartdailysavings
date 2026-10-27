@@ -144,22 +144,17 @@ spec:
           env:
             - name: PORT
               value: "8000"
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: smartdailysavings-secrets
-                  key: DATABASE_URL
-            - name: NEON_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: smartdailysavings-secrets
-                  key: NEON_DATABASE_URL
             - name: CELERY_BROKER_URL
               value: redis://smartdailysavings-redis:6379/0
             - name: CELERY_RESULT_BACKEND
               value: redis://smartdailysavings-redis:6379/0
             - name: MODEL_PROVIDER
               value: openai
+          envFrom:
+            - configMapRef:
+                name: smartdailysavings-config
+            - secretRef:
+                name: smartdailysavings-secrets
 ---
 apiVersion: v1
 kind: Service
