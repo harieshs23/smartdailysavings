@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@neon/sdk": "^7.5.0",
+    "dotenv": "^18.0.9",
+    "neon": "^8.9.0"
+  }
+}

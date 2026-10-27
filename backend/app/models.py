@@ -18,6 +18,11 @@ class Waitlist(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.utcnow
     )
+    notification_timestamp: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = {"extend_existing": True}
 
     __table_args__ = {"extend_existing": True}
 

@@ -1,0 +1,229 @@
+Here is the complete **Database Design and PostgreSQL Schema** for your Deals Master web application, structured for high-performance reads, safe concurrencies, and relational integrity.
+
+---
+
+### 1. Database Architecture & Design Highlights
+
+* **Primary Keys:** UUIDs (`v4`) across all primary tables to prevent enumeration attacks and enable distributed scale.
+* **Denormalized Counters (`score`, `votes_up`, `votes_down`):** While votes are recorded in a dedicated table, the aggregate counters live directly on the `deals` table with dedicated composite indexes (`status, score DESC`) to ensure feed queries render in milliseconds without running expensive `COUNT(*)` calculations on every page view.
+
+
+* **Hierarchy Support:**
+* Self-referencing parent/child relationships on `categories` for sub-category classification.
+
+
+* Self-referencing `parent_id` on `comments` to support nested discussion threads.
+
+
+
+
+* **Concurrency & Integrity:**
+* Unique constraint on `(deal_id, user_id)` in the `votes` table to guarantee that each user can only register one active vote per deal.
+
+
+* Explicit foreign key cascades (`ON DELETE CASCADE` for comments/votes, `ON DELETE RESTRICT` for stores to protect referential integrity).
+
+
+
+
+
+---
+
+### 2. Entity Relationship Model Overview
+
+```text
+               ┌──────────────┐
+               │    users     │
+               └──────┬───────┘
+                      │
+        ┌─────────────┼─────────────┬─────────────┐
+        │ 1:N         │ 1:N         │ 1:N         │ 1:N
+        ▼             ▼             ▼             ▼
+  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐
+  │   deals   │ │   votes   │ │ comments  │ │deal_alerts│
+  └─────┬─────┘ └─────┬─────┘ └─────┬─────┘ └───────────┘
+        │             │             │
+        │ 1:N         │ 1:N         │ 1:N
+        ├─────────────┴─────────────┘
+        ▼
+  ┌───────────┐
+  │deal_clicks│
+  └───────────┘
+
+```
+
+---
+
+### 3. Production PostgreSQL Schema (`schema.sql`)
+
+```sql
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ==========================================
+-- 1. ENUMS
+-- ==========================================
+CREATE TYPE user_role AS ENUM ('user', 'moderator', 'editor', 'admin');
+CREATE TYPE deal_status AS ENUM ('NEW', 'POPULAR', 'FRONTPAGE', 'EXPIRED');
+
+-- ==========================================
+-- 2. USERS
+-- ==========================================
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(32) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255),
+    role user_role NOT NULL DEFAULT 'user',
+    karma_points INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 3. STORES / MERCHANTS
+-- ==========================================
+CREATE TABLE stores (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    domain VARCHAR(255) NOT NULL,
+    affiliate_network VARCHAR(50),             -- Impact, CJ, Amazon, Direct
+    affiliate_base_url TEXT,                    -- Redirect template format
+    logo_url TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 4. CATEGORIES (Self-referencing tree)
+-- ==========================================
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(50) NOT NULL,
+    slug VARCHAR(50) UNIQUE NOT NULL,
+    parent_id UUID REFERENCES categories(id) ON DELETE SET NULL
+);
+
+-- ==========================================
+-- 5. DEALS
+-- ==========================================
+CREATE TABLE deals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(280) UNIQUE NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    store_id UUID NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
+    category_id UUID NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    original_url TEXT NOT NULL,                -- User-submitted URL
+    clean_url TEXT NOT NULL,                   -- Normalized canonical URL
+    original_price NUMERIC(10, 2),
+    sale_price NUMERIC(10, 2) NOT NULL,
+    coupon_code VARCHAR(50),
+    shipping_info VARCHAR(100) DEFAULT 'Standard Shipping',
+    image_url TEXT,
+    description TEXT,
+    status deal_status NOT NULL DEFAULT 'NEW',
+    score INT NOT NULL DEFAULT 0,              -- Net votes (votes_up - votes_down)
+    votes_up INT NOT NULL DEFAULT 0,
+    votes_down INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 6. VOTES (Upvotes / Downvotes)
+-- ==========================================
+CREATE TABLE votes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    vote_type SMALLINT NOT NULL CHECK (vote_type IN (1, -1)),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_deal_vote UNIQUE (deal_id, user_id)
+);
+
+-- ==========================================
+-- 7. COMMENTS (Threaded discussions)
+-- ==========================================
+CREATE TABLE comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 8. DEAL ALERTS
+-- ==========================================
+CREATE TABLE deal_alerts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    keyword VARCHAR(100),
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    store_id UUID REFERENCES stores(id) ON DELETE SET NULL,
+    min_price NUMERIC(10, 2),
+    max_price NUMERIC(10, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 9. OUTBOUND CLICKS & ANALYTICS
+-- ==========================================
+CREATE TABLE deal_clicks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    ip_address INET,
+    user_agent TEXT,
+    clicked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 10. INDEXES FOR PERFORMANCE
+-- ==========================================
+-- Feed query performance (e.g. Frontpage / Popular deals sorted by score)
+CREATE INDEX idx_deals_status_score ON deals(status, score DESC);
+
+-- Chronological sorting
+CREATE INDEX idx_deals_created_at ON deals(created_at DESC);
+
+-- Fast relation lookups
+CREATE INDEX idx_deals_store_id ON deals(store_id);
+CREATE INDEX idx_deals_category_id ON deals(category_id);
+CREATE INDEX idx_votes_deal_id ON votes(deal_id);
+CREATE INDEX idx_comments_deal_id ON comments(deal_id);
+CREATE INDEX idx_deal_clicks_deal_id ON deal_clicks(deal_id);
+
+```
+
+---
+
+### 4. Key Performance Patterns
+
+* **Vote Atomicity:** When a user votes, execute the vote insert and update the counter within a single database transaction:
+```sql
+BEGIN;
+  INSERT INTO votes (deal_id, user_id, vote_type)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (deal_id, user_id)
+  DO UPDATE SET vote_type = EXCLUDED.vote_type;
+
+  UPDATE deals
+  SET votes_up = (SELECT COUNT(*) FROM votes WHERE deal_id = $1 AND vote_type = 1),
+      votes_down = (SELECT COUNT(*) FROM votes WHERE deal_id = $1 AND vote_type = -1),
+      score = (SELECT COALESCE(SUM(vote_type), 0) FROM votes WHERE deal_id = $1)
+  WHERE id = $1;
+COMMIT;
+
+```
+
+
+* **Search Acceleration:** For keyword searches (e.g., matching titles and descriptions), you can add a `tsvector` generated column or use an external search indexer (like Meilisearch or Elasticsearch) synced via database webhooks.
+
+
+
+Would you like to generate the database seed script with mock categories, stores, and sample deals next?

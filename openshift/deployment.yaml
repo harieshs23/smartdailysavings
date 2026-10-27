@@ -145,7 +145,15 @@ spec:
             - name: PORT
               value: "8000"
             - name: DATABASE_URL
-              value: postgresql://smartdailysavings:smartdailysavings@smartdailysavings-postgres:5432/smartdailysavings
+              valueFrom:
+                secretKeyRef:
+                  name: smartdailysavings-secrets
+                  key: DATABASE_URL
+            - name: NEON_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: smartdailysavings-secrets
+                  key: NEON_DATABASE_URL
             - name: CELERY_BROKER_URL
               value: redis://smartdailysavings-redis:6379/0
             - name: CELERY_RESULT_BACKEND

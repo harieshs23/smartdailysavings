@@ -138,6 +138,18 @@ Responsibilities:
 - capture token cost estimate and quality trend notes
 - flag when the sprint should be retried or escalated
 
+### 5.5 Database Agent
+Purpose:
+- own schema design and database evolution for future feature work
+- keep schema changes explicit, versioned, and reviewable
+
+Responsibilities:
+- model new database entities and relationships
+- propose indexes, constraints, and lifecycle rules
+- prepare migration and rollback plans
+- review impact of schema additions or updates on API and business logic
+- preserve backward compatibility during iterative product changes
+
 ## 6. Limited Agent Architecture
 
 This harness intentionally uses a small set of agents to reduce confusion, drift, and overlapping responsibilities.
