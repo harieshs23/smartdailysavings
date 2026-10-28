@@ -27,6 +27,11 @@ jobs:
         run: |
           oc login "${{ secrets.OPENSHIFT_SERVER }}" --token="${{ secrets.OPENSHIFT_TOKEN }}" --insecure-skip-tls-verify=true
 
+      - name: Apply OpenShift config and secrets
+        run: |
+          oc apply -f manifests/smartdailysavings-config.yaml
+          oc apply -f manifests/smartdailysavings-secret.yaml
+
       - name: Apply OpenShift deployment
         run: |
           oc apply -f openshift/deployment.yaml
