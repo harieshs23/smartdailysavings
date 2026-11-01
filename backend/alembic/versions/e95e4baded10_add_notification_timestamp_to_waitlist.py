@@ -19,10 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema."""
+    """Upgrade schema - notification_timestamp column removed"""
     pass
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
+    """Downgrade schema - notification_timestamp column was never added"""
     pass

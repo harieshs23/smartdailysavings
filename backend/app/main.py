@@ -115,7 +115,7 @@ def join_waitlist(payload: WaitlistRequest):
     try:
         existing = db.execute(select(Waitlist).where(Waitlist.email == payload.email)).scalar_one_or_none()
         if existing is None:
-            new_waitlist = Waitlist(email=payload.email, notification_timestamp=datetime.utcnow())
+            new_waitlist = Waitlist(email=payload.email)
             db.add(new_waitlist)
             db.commit()
         return {"status": "success", "message": "Successfully joined the waitlist!"}
