@@ -104,6 +104,12 @@ function App() {
         body: JSON.stringify(payload),
       })
 
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        const rawText = await response.text()
+        throw new Error(rawText.slice(0, 180) || 'Authentication endpoint returned a non-JSON response.')
+      }
+
       const data = await response.json()
       if (!response.ok) {
         throw new Error(data.detail || 'Authentication failed')
