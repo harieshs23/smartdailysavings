@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+const AUTH_TOKEN_KEY = 'smartdailysavings_token'
 
 const defaultDeals = [
   { platform: 'BigBasket', title: 'Fortune Sunlite Refined Sunflower Oil 5L', price: '₹549', mrp: '₹620', discount: '54% OFF', votes: 143, category: 'Groceries', isNew: true },
@@ -20,6 +21,29 @@ function App() {
   const [deals, setDeals] = useState(defaultDeals)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [authMode, setAuthMode] = useState('login')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authName, setAuthName] = useState('')
+  const [authUser, setAuthUser] = useState(null)
+  const [authLoading, setAuthLoading] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY)
+    if (!token) return
+
+    fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Session expired')
+        const data = await res.json()
+        setAuthUser(data.user)
+      })
+      .catch(() => {
+        localStorage.removeItem(AUTH_TOKEN_KEY)
+      })
+  }, [])
 
   async function handleJoinWaitlist(e) {
     e.preventDefault()
@@ -58,6 +82,61 @@ function App() {
     }
   }
 
+  async function handleAuthSubmit(e) {
+    e.preventDefault()
+    if (!authEmail || !authPassword) {
+      setMessage('Email and password are required.')
+      return
+    }
+
+    setAuthLoading(true)
+    setMessage('')
+
+    try {
+      const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register'
+      const payload = authMode === 'login'
+        ? { email: authEmail, password: authPassword }
+        : { email: authEmail, password: authPassword, name: authName || authEmail.split('@')[0] }
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.detail || 'Authentication failed')
+      }
+
+      if (authMode === 'login') {
+        const token = data.session?.token
+        if (token) {
+          localStorage.setItem(AUTH_TOKEN_KEY, token)
+        }
+        setAuthUser(data.session?.user || null)
+        setMessage('Login successful!')
+      } else {
+        setMessage('Account created successfully. Please sign in.')
+        setAuthMode('login')
+      }
+
+      setAuthEmail('')
+      setAuthPassword('')
+      setAuthName('')
+    } catch (error) {
+      setMessage(error.message || 'Authentication failed.')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    setAuthUser(null)
+    setMessage('You have been logged out.')
+  }
+
   return (
     <div className="page-shell">
       <header className="topbar">
@@ -65,6 +144,11 @@ function App() {
         <nav className="nav">
           <a href="#deals">Deals</a>
           <a href="#categories">Categories</a>
+          {authUser ? (
+            <button className="nav-button" onClick={handleLogout}>Logout</button>
+          ) : (
+            <button className="nav-button" onClick={() => setAuthMode('login')}>Login</button>
+          )}
           <a href="#waitlist" className="cta">Get Early Access</a>
         </nav>
       </header>
@@ -93,6 +177,58 @@ function App() {
             />
             <button type="submit">Notify Me</button>
           </form>
+
+          <div className="auth-card">
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
+                onClick={() => setAuthMode('login')}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
+                onClick={() => setAuthMode('register')}
+              >
+                Register
+              </button>
+            </div>
+
+            <form className="auth-form" onSubmit={handleAuthSubmit}>
+              {authMode === 'register' && (
+                <input
+                  type="text"
+                  value={authName}
+                  onChange={(e) => setAuthName(e.target.value)}
+                  placeholder="Your name"
+                />
+              )}
+              <input
+                type="email"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                placeholder="Email"
+              />
+              <input
+                type="password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                placeholder="Password"
+              />
+              <button type="submit" disabled={authLoading}>
+                {authLoading ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+              </button>
+            </form>
+
+            {authUser && (
+              <div className="auth-user">
+                <strong>Signed in as:</strong> {authUser.email}
+              </div>
+            )}
+          </div>
+
           {message && <p className="message">{message}</p>}
         </div>
 

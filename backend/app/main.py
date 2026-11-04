@@ -1,7 +1,7 @@
 import os
 
 from celery import Celery
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -11,6 +11,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from pydantic import BaseModel, EmailStr
 
+from app.auth import authenticate_email_password, create_email_password_account, get_user_from_session_token
 from app.db import SessionLocal, get_db, Base
 from app.models import Deal, Waitlist
 from sqlalchemy import select, text
@@ -59,9 +60,37 @@ class WaitlistRequest(BaseModel):
     email: EmailStr
 
 
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    name: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class SessionResponse(BaseModel):
+    token: str
+    expiresAt: str
+    user: dict
+
+
 @app.on_event("startup")
 def startup_event():
     pass
+
+
+def get_current_user(authorization: str | None = Header(default=None, alias="Authorization")):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid bearer token")
+
+    token = authorization.replace("Bearer ", "", 1).strip()
+    user = get_user_from_session_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+    return user
 
 
 @app.get("/")
@@ -107,6 +136,29 @@ def get_deals(q: str = Query(..., min_length=1)):
             return {"query": q, "results": deals, "count": len(deals)}
         finally:
             db.close()
+
+
+@app.post("/auth/register")
+def register_user(payload: RegisterRequest):
+    try:
+        user = create_email_password_account(payload.email, payload.password, payload.name)
+        return {"status": "success", "user": user}
+    except Exception as exc:  # pragma: no cover - defensive guard
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/auth/login")
+def login_user(payload: LoginRequest):
+    try:
+        session = authenticate_email_password(payload.email, payload.password)
+        return {"status": "success", "session": session}
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
+@app.get("/auth/me")
+def me(current_user: dict = Depends(get_current_user)):
+    return {"status": "success", "user": current_user}
 
 
 @app.post("/waitlist")
