@@ -30,10 +30,10 @@ def ensure_neon_user(email: str, name: str | None = None) -> str:
                     id,
                     email,
                     name,
-                    emailVerified,
+                    "emailVerified",
                     role,
-                    createdAt,
-                    updatedAt
+                    "createdAt",
+                    "updatedAt"
                 )
                 VALUES (:id, :email, :name, FALSE, 'user', NOW(), NOW())
                 """
@@ -57,9 +57,9 @@ def create_email_password_account(email: str, password: str, name: str | None = 
         existing = db.execute(
             text(
                 """
-                SELECT id, userId, accountId
+                SELECT id, "userId", "accountId"
                 FROM neon_auth.account
-                WHERE providerId = 'email-password' AND LOWER(accountId) = LOWER(:account_id)
+                WHERE "providerId" = 'email-password' AND LOWER("accountId") = LOWER(:account_id)
                 LIMIT 1
                 """
             ),
@@ -73,12 +73,12 @@ def create_email_password_account(email: str, password: str, name: str | None = 
                     """
                     INSERT INTO neon_auth.account (
                         id,
-                        accountId,
-                        providerId,
-                        userId,
+                        "accountId",
+                        "providerId",
+                        "userId",
                         password,
-                        createdAt,
-                        updatedAt
+                        "createdAt",
+                        "updatedAt"
                     )
                     VALUES (:id, :account_id, 'email-password', :user_id, :password_hash, NOW(), NOW())
                     """
@@ -94,7 +94,7 @@ def create_email_password_account(email: str, password: str, name: str | None = 
 
         user_row = db.execute(
             text(
-                'SELECT id, email, name, role, emailVerified FROM neon_auth."user" WHERE id = :user_id LIMIT 1'
+                'SELECT id, email, name, role, "emailVerified" FROM neon_auth."user" WHERE id = :user_id LIMIT 1'
             ),
             {"user_id": neon_user_id},
         ).first()
@@ -120,12 +120,12 @@ def create_session(neon_user_id: str, user_agent: str | None = None, ip_address:
                 INSERT INTO neon_auth.session (
                     id,
                     token,
-                    userId,
-                    expiresAt,
-                    userAgent,
-                    ipAddress,
-                    createdAt,
-                    updatedAt
+                    "userId",
+                    "expiresAt",
+                    "userAgent",
+                    "ipAddress",
+                    "createdAt",
+                    "updatedAt"
                 )
                 VALUES (:id, :token, :user_id, :expires_at, :user_agent, :ip_address, NOW(), NOW())
                 """
@@ -153,11 +153,11 @@ def authenticate_email_password(email: str, password: str) -> dict[str, Any]:
         account = db.execute(
             text(
                 """
-                SELECT a.userId, a.password, u.email, u.name, u.role, u.emailVerified
+                SELECT a."userId", a.password, u.email, u.name, u.role, u."emailVerified"
                 FROM neon_auth.account a
-                JOIN neon_auth."user" u ON u.id = a.userId
-                WHERE a.providerId = 'email-password'
-                  AND LOWER(a.accountId) = LOWER(:email)
+                JOIN neon_auth."user" u ON u.id = a."userId"
+                WHERE a."providerId" = 'email-password'
+                  AND LOWER(a."accountId") = LOWER(:email)
                 LIMIT 1
                 """
             ),
@@ -188,10 +188,10 @@ def get_user_from_session_token(token: str) -> dict[str, Any] | None:
         row = db.execute(
             text(
                 """
-                SELECT s.userId, s.expiresAt, u.email, u.name, u.role, u.emailVerified
+                SELECT s."userId", s."expiresAt", u.email, u.name, u.role, u."emailVerified"
                 FROM neon_auth.session s
-                JOIN neon_auth."user" u ON u.id = s.userId
-                WHERE s.token = :token AND s.expiresAt > NOW()
+                JOIN neon_auth."user" u ON u.id = s."userId"
+                WHERE s.token = :token AND s."expiresAt" > NOW()
                 LIMIT 1
                 """
             ),

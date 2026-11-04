@@ -33,7 +33,7 @@ BEGIN
         u.created_at,
         u.updated_at,
         nu.id AS neon_auth_id,
-        nu.emailVerified,
+        nu."emailVerified",
         nu.banned
     FROM public.users u
     LEFT JOIN neon_auth."user" nu ON nu.email = u.email
@@ -72,7 +72,7 @@ BEGIN
     -- Verify password using pgcrypto
     IF v_user.password_hash = crypt(p_password, v_user.password_hash) THEN
         -- Check if email is verified in neon_auth
-        IF v_neon_user.emailVerified THEN
+        IF v_neon_user."emailVerified" THEN
             RETURN QUERY SELECT 
                 v_user.id, 
                 v_neon_user.id, 
@@ -106,7 +106,7 @@ DECLARE
     v_session_id UUID;
 BEGIN
     -- Create session in neon_auth
-    INSERT INTO neon_auth.session (id, token, userId, expiresAt, ipAddress, userAgent)
+    INSERT INTO neon_auth.session (id, token, "userId", "expiresAt", "ipAddress", "userAgent")
     VALUES (
         gen_random_uuid(),
         gen_random_uuid()::TEXT,  
@@ -139,14 +139,14 @@ BEGIN
     RETURN QUERY
     SELECT 
         s.id AS session_id,
-        s.userId AS user_id,
+        s."userId" AS user_id,
         nu.email AS user_email,
         TRUE AS is_valid,
-        s.expiresAt AS expires_at
+        s."expiresAt" AS expires_at
     FROM neon_auth.session s
-    JOIN neon_auth."user" nu ON s.userId = nu.id
+    JOIN neon_auth."user" nu ON s."userId" = nu.id
     WHERE s.token = p_token 
-      AND s.expiresAt > NOW()
+      AND s."expiresAt" > NOW()
       AND s.active = TRUE;
 END;
 $$;
@@ -177,17 +177,17 @@ DECLARE
 BEGIN
     -- Check if social account already exists
     SELECT * INTO v_account FROM neon_auth.account 
-    WHERE providerId = p_provider AND userId = p_provider_user_id;
+    WHERE "providerId" = p_provider AND "userId" = p_provider_user_id;
     
     IF FOUND THEN
         -- Existing social user
-        SELECT * INTO v_neon_user FROM neon_auth."user" WHERE id = v_account.userId;
+        SELECT * INTO v_neon_user FROM neon_auth."user" WHERE id = v_account."userId";
         
         -- Create session
-        v_session_token := public.create_user_session(v_account.userId);
+        v_session_token := public.create_user_session(v_account."userId");
         
         -- Get user from public schema
-        SELECT * INTO v_user FROM public.users WHERE id = v_account.userId;
+        SELECT * INTO v_user FROM public.users WHERE id = v_account."userId";
         
         RETURN QUERY SELECT
             v_user.id,
@@ -222,7 +222,7 @@ BEGIN
         RETURNING * INTO v_neon_user;
         
         -- 3. Create account record
-        INSERT INTO neon_auth.account (id, providerId, userId, accessToken)
+        INSERT INTO neon_auth.account (id, "providerId", "userId", "accessToken")
         VALUES (
             gen_random_uuid(),
             p_provider,
@@ -267,14 +267,14 @@ BEGIN
     END IF;
     
     -- Check if already verified
-    IF v_user.emailVerified THEN
+    IF v_user."emailVerified" THEN
         RETURN QUERY SELECT NULL::UUID, NULL::VARCHAR, NULL::TIMESTAMP, 'Email already verified';
     END IF;
     
     -- Create verification token
     DELETE FROM neon_auth.verification WHERE identifier = 'email' AND value = p_email;
     
-    INSERT INTO neon_auth.verification (id, identifier, value, expiresAt)
+    INSERT INTO neon_auth.verification (id, identifier, value, "expiresAt")
     VALUES (
         gen_random_uuid(),
         'email',
@@ -289,7 +289,7 @@ BEGIN
     RETURN QUERY SELECT
         v_verification.id,
         v_code,
-        v_verification.expiresAt,
+        v_verification."expiresAt",
         'Verification code sent to ' || p_email;
 END;
 $$;
@@ -312,7 +312,7 @@ DECLARE
 BEGIN
     -- Find the verification record
     SELECT * INTO v_verification FROM neon_auth.verification
-    WHERE identifier = 'email' AND value = p_email AND expiresAt > NOW()
+    WHERE identifier = 'email' AND value = p_email AND "expiresAt" > NOW()
     ORDER BY created_at DESC
     LIMIT 1;
     
@@ -325,7 +325,7 @@ BEGIN
     IF v_verification.value ILIKE '%' || p_code || '%' THEN
         -- Mark user's email as verified in neon_auth
         UPDATE neon_auth."user"
-        SET emailVerified = TRUE
+        SET "emailVerified" = TRUE
         WHERE id = v_verification.identifier::UUID;  -- Note: needs adjustment
         
         RETURN QUERY SELECT TRUE, v_verification.id, 'Email verified successfully';
@@ -362,7 +362,7 @@ BEGIN
     END IF;
     
     -- Create invitation
-    INSERT INTO neon_auth.invitation (id, organizationId, email, role, status, expiresAt, createdAt)
+    INSERT INTO neon_auth.invitation (id, "organizationId", email, role, status, "expiresAt", "createdAt")
     VALUES (
         gen_random_uuid(),
         p_org_id,
@@ -378,7 +378,7 @@ BEGIN
         v_invitation.id,
         v_invitation.email,
         v_invitation.role,
-        v_invitation.expiresAt,
+        v_invitation."expiresAt",
         'pending';
 END;
 $$;
@@ -409,7 +409,7 @@ BEGIN
     END IF;
     
     -- Check if invitation is still valid
-    IF v_invitation.expiresAt < NOW() THEN
+    IF v_invitation."expiresAt" < NOW() THEN
         RETURN QUERY SELECT FALSE, NULL, NULL, 'Invitation expired';
     END IF;
     
