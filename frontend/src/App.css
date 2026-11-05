@@ -151,6 +151,21 @@
   font-size: 0.9rem;
 }
 
+.profile-card {
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 2;
+}
+
+.profile-card h4 {
+  margin: 0 0 8px;
+  color: #fbbf24;
+}
+
 .message {
   margin-top: 12px;
   color: #c6f6d5;
