@@ -20,23 +20,70 @@
   font-weight: 800;
 }
 
-.nav {
+.nav-center {
   display: flex;
   align-items: center;
   gap: 20px;
 }
 
-.nav a {
+.nav-center a {
   color: rgba(255,255,255,0.9);
   text-decoration: none;
   font-weight: 600;
 }
 
-.nav .cta {
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-button {
+  padding: 8px 16px;
+  border: none;
+  background: #e72920;
+  color: white;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.nav-button:hover {
+  background: #d82a1f;
+  transform: translateY(-1px);
+}
+
+.nav-button:active {
+  transform: translateY(0);
+}
+
+.nav-button.secondary {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
+.nav-button.secondary:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.cta {
   background: white;
   color: #d82a1f;
   padding: 8px 16px;
   border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.cta:hover {
+  background: #fef2f2;
+  transform: translateY(-1px);
+}
+
+.user-menu {
+  position: relative;
 }
 
 .hero {

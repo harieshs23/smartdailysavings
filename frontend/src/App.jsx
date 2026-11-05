@@ -148,9 +148,11 @@ function App() {
     <div className="page-shell">
       <header className="topbar">
         <div className="brand">💰 SmartDailySavings</div>
-        <nav className="nav">
+        <nav className="nav-center">
           <a href="#deals">Deals</a>
           <a href="#categories">Categories</a>
+        </nav>
+        <div className="nav-right">
           {authUser ? (
             <div className="user-menu">
               <button className="nav-button" onClick={() => setShowProfile(!showProfile)}>
@@ -172,12 +174,12 @@ function App() {
             </div>
           ) : (
             <>
-              <button className="nav-button" onClick={() => setAuthMode('login')}>Login</button>
+              <button className="nav-button secondary" onClick={() => setAuthMode('login')}>Login</button>
               <button className="nav-button" onClick={() => setAuthMode('register')}>Register</button>
             </>
           )}
           <a href="#waitlist" className="cta">Get Early Access</a>
-        </nav>
+        </div>
       </header>
 
       <section className="hero">
