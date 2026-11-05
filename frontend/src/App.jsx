@@ -27,6 +27,7 @@ function App() {
   const [authName, setAuthName] = useState('')
   const [authUser, setAuthUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY)
@@ -151,7 +152,12 @@ function App() {
           <a href="#deals">Deals</a>
           <a href="#categories">Categories</a>
           {authUser ? (
-            <button className="nav-button" onClick={handleLogout}>Logout</button>
+            <>
+              <button className="nav-button" onClick={() => setShowProfile(!showProfile)}>
+                {authUser.name || authUser.email}
+              </button>
+              <button className="nav-button" onClick={handleLogout}>Logout</button>
+            </>
           ) : (
             <button className="nav-button" onClick={() => setAuthMode('login')}>Login</button>
           )}
@@ -229,10 +235,22 @@ function App() {
             </form>
 
             {authUser && (
-              <div className="auth-user">
-                <strong>Signed in as:</strong> {authUser.email}
-              </div>
-            )}
+            <div className="auth-user">
+              <strong>Signed in as:</strong> {authUser.email}
+              {showProfile && (
+                <div className="profile-card">
+                  <h4>Profile</h4>
+                  <p><strong>Name:</strong> {authUser.name || '—'}</p>
+                  <p><strong>Email:</strong> {authUser.email}</p>
+                  <p><strong>Role:</strong> {authUser.role || 'user'}</p>
+                  <p><strong>Email Verified:</strong> {authUser.emailVerified ? 'Yes' : 'No'}</p>
+                  {authUser.sessionExpiresAt && (
+                    <p><strong>Session expires:</strong> {new Date(authUser.sessionExpiresAt).toLocaleString()}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           </div>
 
           {message && <p className="message">{message}</p>}
