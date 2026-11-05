@@ -120,36 +120,97 @@
 .searchbar,
 .waitlist-form {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-top: 18px;
-  max-width: 620px;
+  max-width: 640px;
 }
 
-.searchbar input,
-.waitlist-form input,
-.auth-form input {
+.searchbar input {
   flex: 1;
   border: none;
-  border-radius: 10px;
-  padding: 14px 16px;
-  font-size: 1rem;
+  border-radius: 999px;
+  padding: 16px 22px;
+  font-size: 1.05rem;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  outline: none;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
-.searchbar button,
-.waitlist-form button,
-.auth-form button,
-.nav-button {
+.searchbar input::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+.searchbar input:focus {
+  background: rgba(255,255,255,0.12);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25);
+}
+
+.searchbar button {
+  border: none;
+  background: #fbbf24;
+  color: #121212;
+  border-radius: 999px;
+  padding: 0 28px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.searchbar button:hover {
+  background: #fcd34d;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.35);
+}
+
+.searchbar button:active {
+  transform: translateY(0);
+}
+
+.waitlist-form input {
+  flex: 1;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-size: 1rem;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  outline: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.waitlist-form input::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+.waitlist-form input:focus {
+  background: rgba(255,255,255,0.12);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25);
+}
+
+.waitlist-form button {
   border: none;
   background: #e72920;
   color: white;
-  border-radius: 10px;
-  padding: 0 20px;
+  border-radius: 999px;
+  padding: 0 26px;
   font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  white-space: nowrap;
 }
 
-.nav-button {
-  padding: 8px 16px;
+.waitlist-form button:hover {
+  background: #d82a1f;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(216, 42, 31, 0.35);
+}
+
+.waitlist-form button:active {
+  transform: translateY(0);
 }
 
 .auth-card {
