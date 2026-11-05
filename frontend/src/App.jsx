@@ -171,7 +171,10 @@ function App() {
               )}
             </div>
           ) : (
-            <button className="nav-button" onClick={() => setAuthMode('login')}>Login</button>
+            <>
+              <button className="nav-button" onClick={() => setAuthMode('login')}>Login</button>
+              <button className="nav-button" onClick={() => setAuthMode('register')}>Register</button>
+            </>
           )}
           <a href="#waitlist" className="cta">Get Early Access</a>
         </nav>
@@ -203,51 +206,58 @@ function App() {
           </form>
 
           <div className="auth-card">
-            <div className="auth-tabs">
-              <button
-                type="button"
-                className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
-                onClick={() => setAuthMode('login')}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
-                onClick={() => setAuthMode('register')}
-              >
-                Register
-              </button>
-            </div>
+                      {!authUser && (
+                        <div className="auth-tabs">
+                          <button
+                            type="button"
+                            className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
+                            onClick={() => setAuthMode('login')}
+                          >
+                            Login
+                          </button>
+                          <button
+                            type="button"
+                            className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
+                            onClick={() => setAuthMode('register')}
+                          >
+                            Register
+                          </button>
+                        </div>
+                      )}
 
-            <form className="auth-form" onSubmit={handleAuthSubmit}>
-              {authMode === 'register' && (
-                <input
-                  type="text"
-                  value={authName}
-                  onChange={(e) => setAuthName(e.target.value)}
-                  placeholder="Your name"
-                />
-              )}
-              <input
-                type="email"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                placeholder="Email"
-              />
-              <input
-                type="password"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                placeholder="Password"
-              />
-              <button type="submit" disabled={authLoading}>
-                {authLoading ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
-              </button>
-            </form>
-
-            
-          </div>
+                      <form className="auth-form" onSubmit={handleAuthSubmit}>
+                        {!authUser && authMode === 'register' && (
+                          <input
+                            type="text"
+                            value={authName}
+                            onChange={(e) => setAuthName(e.target.value)}
+                            placeholder="Your name"
+                          />
+                        )}
+                        {!authUser && (
+                          <input
+                            type="email"
+                            value={authEmail}
+                            onChange={(e) => setAuthEmail(e.target.value)}
+                            placeholder="Email"
+                          />
+                        )}
+                        {!authUser && (
+                          <input
+                            type="password"
+                            value={authPassword}
+                            onChange={(e) => setAuthPassword(e.target.value)}
+                            placeholder="Password"
+                          />
+                        )}
+                        {!authUser && (
+                          <button type="submit" disabled={authLoading}>
+                            {authLoading ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+                          </button>
+                        )}
+                        {authUser && <p style={{ color: '#a7f3d0', textAlign: 'center' }}>Signed in as {authUser.name || authUser.email}</p>}
+                      </form>
+                    </div>
 
           {message && <p className="message">{message}</p>}
         </div>
