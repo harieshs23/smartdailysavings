@@ -152,12 +152,24 @@ function App() {
           <a href="#deals">Deals</a>
           <a href="#categories">Categories</a>
           {authUser ? (
-            <>
+            <div className="user-menu">
               <button className="nav-button" onClick={() => setShowProfile(!showProfile)}>
                 {authUser.name || authUser.email}
               </button>
-              <button className="nav-button" onClick={handleLogout}>Logout</button>
-            </>
+              {showProfile && (
+                <div className="profile-dropdown">
+                  <h4>Profile</h4>
+                  <p><strong>Name:</strong> {authUser.name || '—'}</p>
+                  <p><strong>Email:</strong> {authUser.email}</p>
+                  <p><strong>Role:</strong> {authUser.role || 'user'}</p>
+                  <p><strong>Email Verified:</strong> {authUser.emailVerified ? 'Yes' : 'No'}</p>
+                  {authUser.sessionExpiresAt && (
+                    <p><strong>Session expires:</strong> {new Date(authUser.sessionExpiresAt).toLocaleString()}</p>
+                  )}
+                  <button className="nav-button" onClick={handleLogout} style={{ marginTop: '10px', width: '100%' }}>Logout</button>
+                </div>
+              )}
+            </div>
           ) : (
             <button className="nav-button" onClick={() => setAuthMode('login')}>Login</button>
           )}
@@ -234,23 +246,7 @@ function App() {
               </button>
             </form>
 
-            {authUser && (
-            <div className="auth-user">
-              <strong>Signed in as:</strong> {authUser.email}
-              {showProfile && (
-                <div className="profile-card">
-                  <h4>Profile</h4>
-                  <p><strong>Name:</strong> {authUser.name || '—'}</p>
-                  <p><strong>Email:</strong> {authUser.email}</p>
-                  <p><strong>Role:</strong> {authUser.role || 'user'}</p>
-                  <p><strong>Email Verified:</strong> {authUser.emailVerified ? 'Yes' : 'No'}</p>
-                  {authUser.sessionExpiresAt && (
-                    <p><strong>Session expires:</strong> {new Date(authUser.sessionExpiresAt).toLocaleString()}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+            
           </div>
 
           {message && <p className="message">{message}</p>}
