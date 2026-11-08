@@ -173,7 +173,13 @@ function App() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : null}
+        </div>
+      </header>
+
+      <section className="hero">
+        <div className="auth-top">
+          {authUser ? null : (
             <>
               <button className="nav-button secondary" onClick={() => setAuthMode('login')}>Login</button>
               {authMode === 'login' && (
@@ -192,11 +198,7 @@ function App() {
               <button className="nav-button" onClick={() => setAuthMode('register')}>Register</button>
             </>
           )}
-          <a href="#waitlist" className="cta">Get Early Access</a>
         </div>
-      </header>
-
-      <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">India's AI-powered savings app</p>
           <h1>Compare the best deals before you buy.</h1>

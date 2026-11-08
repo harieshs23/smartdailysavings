@@ -97,6 +97,15 @@
   margin-bottom: 32px;
 }
 
+.auth-top {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
 .eyebrow {
   color: #fbbf24;
   text-transform: uppercase;
