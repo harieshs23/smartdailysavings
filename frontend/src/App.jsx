@@ -28,6 +28,7 @@ function App() {
   const [authUser, setAuthUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [region, setRegion] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY)
@@ -175,6 +176,19 @@ function App() {
           ) : (
             <>
               <button className="nav-button secondary" onClick={() => setAuthMode('login')}>Login</button>
+              {authMode === 'login' && (
+                <select
+                  className="nav-button secondary"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                  onChange={(e) => setRegion(e.target.value)}
+                >
+                  <option value="">Select region</option>
+                  <option value="india">India</option>
+                  <option value="us">United States</option>
+                  <option value="uk">United Kingdom</option>
+                  <option value="ca">Canada</option>
+                </select>
+              )}
               <button className="nav-button" onClick={() => setAuthMode('register')}>Register</button>
             </>
           )}
