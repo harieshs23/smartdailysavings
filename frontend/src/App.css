@@ -95,15 +95,7 @@
   border-radius: 18px;
   padding: 28px;
   margin-bottom: 32px;
-}
-
-.auth-top {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  position: relative;
 }
 
 .eyebrow {
@@ -229,6 +221,14 @@
   border-radius: 14px;
   padding: 16px;
   max-width: 620px;
+}
+
+.auth-card-floating {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: min(360px, calc(100% - 28px));
+  z-index: 10;
 }
 
 .auth-tabs {

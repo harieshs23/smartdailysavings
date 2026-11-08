@@ -28,6 +28,7 @@ function App() {
   const [authUser, setAuthUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [showAuthPanel, setShowAuthPanel] = useState(false)
   const [region, setRegion] = useState('')
 
   useEffect(() => {
@@ -173,32 +174,23 @@ function App() {
                 </div>
               )}
             </div>
-          ) : null}
+          ) : (
+            <>
+              <button className="nav-button secondary" onClick={() => {
+                setAuthMode('login')
+                setShowAuthPanel(true)
+              }}>Login</button>
+              <button className="nav-button" onClick={() => {
+                setAuthMode('register')
+                setShowAuthPanel(true)
+              }}>Register</button>
+            </>
+          )}
+          <a href="#waitlist" className="cta">Get Early Access</a>
         </div>
       </header>
 
       <section className="hero">
-        <div className="auth-top">
-          {authUser ? null : (
-            <>
-              <button className="nav-button secondary" onClick={() => setAuthMode('login')}>Login</button>
-              {authMode === 'login' && (
-                <select
-                  className="nav-button secondary"
-                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-                  onChange={(e) => setRegion(e.target.value)}
-                >
-                  <option value="">Select region</option>
-                  <option value="india">India</option>
-                  <option value="us">United States</option>
-                  <option value="uk">United Kingdom</option>
-                  <option value="ca">Canada</option>
-                </select>
-              )}
-              <button className="nav-button" onClick={() => setAuthMode('register')}>Register</button>
-            </>
-          )}
-        </div>
         <div className="hero-copy">
           <p className="eyebrow">India's AI-powered savings app</p>
           <h1>Compare the best deals before you buy.</h1>
@@ -223,59 +215,52 @@ function App() {
             <button type="submit">Notify Me</button>
           </form>
 
-          <div className="auth-card">
-                      {!authUser && (
-                        <div className="auth-tabs">
-                          <button
-                            type="button"
-                            className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
-                            onClick={() => setAuthMode('login')}
-                          >
-                            Login
-                          </button>
-                          <button
-                            type="button"
-                            className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
-                            onClick={() => setAuthMode('register')}
-                          >
-                            Register
-                          </button>
-                        </div>
-                      )}
+          {showAuthPanel && !authUser && (
+            <div className="auth-card auth-card-floating">
+              <div className="auth-tabs">
+                <button
+                  type="button"
+                  className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
+                  onClick={() => setAuthMode('login')}
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
+                  onClick={() => setAuthMode('register')}
+                >
+                  Register
+                </button>
+              </div>
 
-                      <form className="auth-form" onSubmit={handleAuthSubmit}>
-                        {!authUser && authMode === 'register' && (
-                          <input
-                            type="text"
-                            value={authName}
-                            onChange={(e) => setAuthName(e.target.value)}
-                            placeholder="Your name"
-                          />
-                        )}
-                        {!authUser && (
-                          <input
-                            type="email"
-                            value={authEmail}
-                            onChange={(e) => setAuthEmail(e.target.value)}
-                            placeholder="Email"
-                          />
-                        )}
-                        {!authUser && (
-                          <input
-                            type="password"
-                            value={authPassword}
-                            onChange={(e) => setAuthPassword(e.target.value)}
-                            placeholder="Password"
-                          />
-                        )}
-                        {!authUser && (
-                          <button type="submit" disabled={authLoading}>
-                            {authLoading ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
-                          </button>
-                        )}
-                        {authUser && <p style={{ color: '#a7f3d0', textAlign: 'center' }}>Signed in as {authUser.name || authUser.email}</p>}
-                      </form>
-                    </div>
+              <form className="auth-form" onSubmit={handleAuthSubmit}>
+                {authMode === 'register' && (
+                  <input
+                    type="text"
+                    value={authName}
+                    onChange={(e) => setAuthName(e.target.value)}
+                    placeholder="Your name"
+                  />
+                )}
+                <input
+                  type="email"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  placeholder="Email"
+                />
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="Password"
+                />
+                <button type="submit" disabled={authLoading}>
+                  {authLoading ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+            </div>
+          )}
 
           {message && <p className="message">{message}</p>}
         </div>
