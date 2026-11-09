@@ -28,7 +28,7 @@ function App() {
   const [authUser, setAuthUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
-  const [showAuthPanel, setShowAuthPanel] = useState(false)
+  const [showAuthDrawer, setShowAuthDrawer] = useState(false)
   const [region, setRegion] = useState('')
 
   useEffect(() => {
@@ -159,11 +159,11 @@ function App() {
             <>
               <button className="nav-button secondary" onClick={() => {
                 setAuthMode('login')
-                setShowAuthPanel(true)
+                setShowAuthDrawer(true)
               }}>Login</button>
               <button className="nav-button" onClick={() => {
                 setAuthMode('register')
-                setShowAuthPanel(true)
+                setShowAuthDrawer(true)
               }}>Register</button>
             </>
           )}
@@ -190,53 +190,6 @@ function App() {
           <a href="#waitlist" className="cta">Get Early Access</a>
         </div>
       </header>
-
-      {showAuthPanel && !authUser && (
-        <div className="auth-card auth-card-panel">
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
-              onClick={() => setAuthMode('login')}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
-              onClick={() => setAuthMode('register')}
-            >
-              Register
-            </button>
-          </div>
-
-          <form className="auth-form" onSubmit={handleAuthSubmit}>
-            {authMode === 'register' && (
-              <input
-                type="text"
-                value={authName}
-                onChange={(e) => setAuthName(e.target.value)}
-                placeholder="Your name"
-              />
-            )}
-            <input
-              type="email"
-              value={authEmail}
-              onChange={(e) => setAuthEmail(e.target.value)}
-              placeholder="Email"
-            />
-            <input
-              type="password"
-              value={authPassword}
-              onChange={(e) => setAuthPassword(e.target.value)}
-              placeholder="Password"
-            />
-            <button type="submit" disabled={authLoading}>
-              {authLoading ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
-            </button>
-          </form>
-        </div>
-      )}
 
       <section className="hero">
         <div className="hero-copy">
@@ -320,6 +273,83 @@ function App() {
           )}
         </div>
       </main>
+
+      {showAuthDrawer && !authUser && (
+        <div className="auth-drawer-overlay" onClick={() => setShowAuthDrawer(false)} />
+      )}
+      {showAuthDrawer && !authUser && (
+        <aside className="auth-drawer" role="dialog" aria-modal="true" aria-labelledby="auth-drawer-title">
+          <div className="auth-drawer-header">
+            <h2 id="auth-drawer-title">Welcome Back</h2>
+            <p>Sign in or register</p>
+            <button className="auth-drawer-close" onClick={() => setShowAuthDrawer(false)} aria-label="Close">
+              ×
+            </button>
+          </div>
+          <div className="auth-drawer-body">
+            <div className="auth-social">
+              <button type="button" className="auth-social-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/></svg>
+                <span>Continue with Google</span>
+              </button>
+              <button type="button" className="auth-social-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.05 16.06c-.98 0-1.72-.8-1.72-1.79 0-.75.37-1.32 1.17-1.72V7H14V5h4v12h-3.95v-2.94zM8 5H6.13l-.03 12H8V11.77c0-2.05 2.26-3.2 3.83-3.2 2.52 0 3.15 1.52 3.15 3.2V17H20v3h-4v4h-4v-4H8V5zm8.58 8.64c-.75 0-1.32-.5-1.32-1.25 0-.6.42-1.25 1.18-1.25.7 0 1.33.46 1.33 1.14 0 .8-.53 1.36-1.19 1.36z"/></svg>
+                <span>Continue with Apple</span>
+              </button>
+            </div>
+            <div className="auth-divider">
+              <span>or</span>
+            </div>
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
+                onClick={() => setAuthMode('login')}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
+                onClick={() => setAuthMode('register')}
+              >
+                Register
+              </button>
+            </div>
+            <form className="auth-form" onSubmit={handleAuthSubmit}>
+              {authMode === 'register' && (
+                <input
+                  type="text"
+                  value={authName}
+                  onChange={(e) => setAuthName(e.target.value)}
+                  placeholder="Your name"
+                />
+              )}
+              <input
+                type="email"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                placeholder="Email"
+              />
+              <input
+                type="password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                placeholder="Password"
+              />
+              <button type="submit" disabled={authLoading}>
+                {authLoading ? 'Please wait...' : authMode === 'login' ? 'Continue' : 'Create Account'}
+              </button>
+            </form>
+            <div className="auth-footer">
+              {authMode === 'login' && (
+                <p>New customer? <button type="button" onClick={() => setAuthMode('register')}>Create an account</button></p>
+              )}
+              <p className="auth-guest"><button type="button" onClick={() => setShowAuthDrawer(false)}>Checkout as Guest</button></p>
+            </div>
+          </div>
+        </aside>
+      )}
     </div>
   )
 }
