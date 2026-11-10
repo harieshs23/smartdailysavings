@@ -790,3 +790,77 @@
 .auth-guest button:hover {
   color: white !important;
 }
+
+.auth-verification {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.auth-verification-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+}
+
+.auth-verification h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.auth-verification p {
+  margin: 0;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.5;
+}
+
+.auth-verification-sub {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.5) !important;
+}
+
+.auth-verification strong {
+  color: #fbbf24;
+}
+
+.auth-verification-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.auth-verification-actions .auth-social-btn {
+  justify-content: center;
+}
+
+.auth-verification-manual {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+}
+
+.auth-message {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-message.success {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+
+.auth-message.error {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}

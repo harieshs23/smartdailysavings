@@ -11,7 +11,14 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from pydantic import BaseModel, EmailStr
 
-from app.auth import authenticate_email_password, create_email_password_account, get_user_from_session_token
+from app.auth import (
+    authenticate_email_password,
+    create_email_password_account,
+    get_user_from_session_token,
+    create_verification_token,
+    verify_email_token,
+    resend_verification_email,
+)
 from app.db import SessionLocal, get_db, Base
 from app.models import Deal, Waitlist
 from sqlalchemy import select, text
@@ -69,6 +76,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
 
 
 class SessionResponse(BaseModel):
@@ -142,7 +157,9 @@ def get_deals(q: str = Query(..., min_length=1)):
 def register_user(payload: RegisterRequest):
     try:
         user = create_email_password_account(payload.email, payload.password, payload.name)
-        return {"status": "success", "user": user}
+        # Create verification token for the new user
+        create_verification_token(user["id"], user["email"])
+        return {"status": "success", "user": user, "message": "Registration successful. Please check your email to verify your account."}
     except Exception as exc:  # pragma: no cover - defensive guard
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -154,6 +171,35 @@ def login_user(payload: LoginRequest):
         return {"status": "success", "session": session}
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
+@app.post("/auth/verify-email")
+def verify_email(payload: VerifyEmailRequest):
+    result = verify_email_token(payload.token)
+    if result is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+    return {"status": "success", "message": "Email verified successfully", "user": result}
+
+
+@app.post("/auth/resend-verification")
+def resend_verification(payload: ResendVerificationRequest):
+    try:
+        # Find the user by email
+        with SessionLocal() as db:
+            row = db.execute(
+                text('SELECT id FROM neon_auth."user" WHERE LOWER(email) = LOWER(:email) LIMIT 1'),
+                {"email": payload.email},
+            ).first()
+            
+        if row is None:
+            # Don't reveal if email exists or not for security
+            return {"status": "success", "message": "If the email exists, a verification email has been sent"}
+        
+        user_id = str(row[0])
+        create_verification_token(user_id, payload.email)
+        return {"status": "success", "message": "Verification email sent"}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/auth/me")

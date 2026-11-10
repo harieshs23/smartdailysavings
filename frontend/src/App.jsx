@@ -29,6 +29,9 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showAuthDrawer, setShowAuthDrawer] = useState(false)
+  const [showVerification, setShowVerification] = useState(false)
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationMessage, setVerificationMessage] = useState('')
   const [region, setRegion] = useState('')
 
   useEffect(() => {
@@ -46,6 +49,38 @@ function App() {
       .catch(() => {
         localStorage.removeItem(AUTH_TOKEN_KEY)
       })
+  }, [])
+
+  // Check for email verification token in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const verifyToken = urlParams.get('token')
+    if (verifyToken) {
+      // Verify the token automatically
+      fetch(`${API_BASE_URL}/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: verifyToken }),
+      })
+        .then(async (res) => {
+          const data = await res.json()
+          if (res.ok) {
+            setVerificationMessage('Email verified successfully! You can now sign in.')
+            setShowVerification(false)
+            setAuthMode('login')
+            setShowAuthDrawer(true)
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname)
+          } else {
+            setVerificationMessage(data.detail || 'Verification failed')
+            setShowVerification(true)
+          }
+        })
+        .catch(() => {
+          setVerificationMessage('Verification failed. Please try again.')
+          setShowVerification(true)
+        })
+    }
   }, [])
 
   async function handleJoinWaitlist(e) {
@@ -120,14 +155,28 @@ function App() {
 
       if (authMode === 'login') {
         const token = data.session?.token
+        const user = data.session?.user
+        
+        if (!user) {
+          throw new Error('Invalid response from server')
+        }
+        
+        // Check if email is verified
+        if (!user.emailVerified) {
+          setVerificationEmail(authEmail)
+          setShowVerification(true)
+          setShowAuthDrawer(false)
+          return
+        }
+        
         if (token) {
           localStorage.setItem(AUTH_TOKEN_KEY, token)
         }
-        setAuthUser(data.session?.user || null)
+        setAuthUser(user)
         setMessage('Login successful!')
       } else {
-        setMessage('Account created successfully. Please sign in.')
-        setAuthMode('login')
+        setMessage(data.message || 'Account created successfully. Please check your email to verify your account.')
+        setShowAuthDrawer(false)
       }
 
       setAuthEmail('')
@@ -144,6 +193,51 @@ function App() {
     localStorage.removeItem(AUTH_TOKEN_KEY)
     setAuthUser(null)
     setMessage('You have been logged out.')
+  }
+
+  async function handleResendVerification(e) {
+    e.preventDefault()
+    if (!verificationEmail) return
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: verificationEmail }),
+      })
+      const data = await response.json()
+      setVerificationMessage(data.message || 'Verification email sent')
+    } catch (error) {
+      setVerificationMessage('Failed to resend verification email')
+    }
+  }
+
+  async function handleVerifyToken(e) {
+    e.preventDefault()
+    const token = new URLSearchParams(window.location.search).get('token')
+    if (!token) {
+      setVerificationMessage('No verification token found')
+      return
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setVerificationMessage('Email verified successfully! You can now sign in.')
+        setShowVerification(false)
+        setAuthMode('login')
+        setShowAuthDrawer(true)
+      } else {
+        setVerificationMessage(data.detail || 'Verification failed')
+      }
+    } catch (error) {
+      setVerificationMessage('Verification failed. Please try again.')
+    }
   }
 
   return (
@@ -287,66 +381,105 @@ function App() {
             </button>
           </div>
           <div className="auth-drawer-body">
-            <div className="auth-social">
-              <button type="button" className="auth-social-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/></svg>
-                <span>Continue with Google</span>
-              </button>
-              <button type="button" className="auth-social-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.05 16.06c-.98 0-1.72-.8-1.72-1.79 0-.75.37-1.32 1.17-1.72V7H14V5h4v12h-3.95v-2.94zM8 5H6.13l-.03 12H8V11.77c0-2.05 2.26-3.2 3.83-3.2 2.52 0 3.15 1.52 3.15 3.2V17H20v3h-4v4h-4v-4H8V5zm8.58 8.64c-.75 0-1.32-.5-1.32-1.25 0-.6.42-1.25 1.18-1.25.7 0 1.33.46 1.33 1.14 0 .8-.53 1.36-1.19 1.36z"/></svg>
-                <span>Continue with Apple</span>
-              </button>
-            </div>
-            <div className="auth-divider">
-              <span>or</span>
-            </div>
-            <div className="auth-tabs">
-              <button
-                type="button"
-                className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
-                onClick={() => setAuthMode('login')}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
-                onClick={() => setAuthMode('register')}
-              >
-                Register
-              </button>
-            </div>
-            <form className="auth-form" onSubmit={handleAuthSubmit}>
-              {authMode === 'register' && (
-                <input
-                  type="text"
-                  value={authName}
-                  onChange={(e) => setAuthName(e.target.value)}
-                  placeholder="Your name"
-                />
-              )}
-              <input
-                type="email"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                placeholder="Email"
-              />
-              <input
-                type="password"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                placeholder="Password"
-              />
-              <button type="submit" disabled={authLoading}>
-                {authLoading ? 'Please wait...' : authMode === 'login' ? 'Continue' : 'Create Account'}
-              </button>
-            </form>
-            <div className="auth-footer">
-              {authMode === 'login' && (
-                <p>New customer? <button type="button" onClick={() => setAuthMode('register')}>Create an account</button></p>
-              )}
-              <p className="auth-guest"><button type="button" onClick={() => setShowAuthDrawer(false)}>Checkout as Guest</button></p>
-            </div>
+            {showVerification ? (
+              <div className="auth-verification">
+                <div className="auth-verification-icon">📧</div>
+                <h3>Verify Your Email</h3>
+                <p>We've sent a verification link to <strong>{verificationEmail}</strong></p>
+                <p className="auth-verification-sub">Click the link in the email to verify your account, then return here to sign in.</p>
+                
+                {verificationMessage && <p className={`auth-message ${verificationMessage.includes('success') ? 'success' : 'error'}`}>{verificationMessage}</p>}
+                
+                <div className="auth-verification-actions">
+                  <button className="auth-social-btn" onClick={handleResendVerification}>
+                    Resend Verification Email
+                  </button>
+                  <button className="auth-social-btn" onClick={() => {
+                    setShowVerification(false)
+                    setAuthMode('login')
+                  }}>
+                    Back to Sign In
+                  </button>
+                </div>
+                
+                <div className="auth-divider">
+                  <span>or</span>
+                </div>
+                
+                <form className="auth-form" onSubmit={handleVerifyToken}>
+                  <p className="auth-verification-manual">Have a verification link? Enter the token manually:</p>
+                  <input
+                    type="text"
+                    placeholder="Verification token"
+                    onChange={(e) => setVerificationMessage('')}
+                  />
+                  <button type="submit">Verify</button>
+                </form>
+              </div>
+            ) : (
+              <>
+                <div className="auth-social">
+                  <button type="button" className="auth-social-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/></svg>
+                    <span>Continue with Google</span>
+                  </button>
+                  <button type="button" className="auth-social-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.05 16.06c-.98 0-1.72-.8-1.72-1.79 0-.75.37-1.32 1.17-1.72V7H14V5h4v12h-3.95v-2.94zM8 5H6.13l-.03 12H8V11.77c0-2.05 2.26-3.2 3.83-3.2 2.52 0 3.15 1.52 3.15 3.2V17H20v3h-4v4h-4v-4H8V5zm8.58 8.64c-.75 0-1.32-.5-1.32-1.25 0-.6.42-1.25 1.18-1.25.7 0 1.33.46 1.33 1.14 0 .8-.53 1.36-1.19 1.36z"/></svg>
+                    <span>Continue with Apple</span>
+                  </button>
+                </div>
+                <div className="auth-divider">
+                  <span>or</span>
+                </div>
+                <div className="auth-tabs">
+                  <button
+                    type="button"
+                    className={authMode === 'login' ? 'auth-tab active' : 'auth-tab'}
+                    onClick={() => setAuthMode('login')}
+                  >
+                    Login
+                  </button>
+                  <button
+                    type="button"
+                    className={authMode === 'register' ? 'auth-tab active' : 'auth-tab'}
+                    onClick={() => setAuthMode('register')}
+                  >
+                    Register
+                  </button>
+                </div>
+                <form className="auth-form" onSubmit={handleAuthSubmit}>
+                  {authMode === 'register' && (
+                    <input
+                      type="text"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      placeholder="Your name"
+                    />
+                  )}
+                  <input
+                    type="email"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="Email"
+                  />
+                  <input
+                    type="password"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="Password"
+                  />
+                  <button type="submit" disabled={authLoading}>
+                    {authLoading ? 'Please wait...' : authMode === 'login' ? 'Continue' : 'Create Account'}
+                  </button>
+                </form>
+                <div className="auth-footer">
+                  {authMode === 'login' && (
+                    <p>New customer? <button type="button" onClick={() => setAuthMode('register')}>Create an account</button></p>
+                  )}
+                  <p className="auth-guest"><button type="button" onClick={() => setShowAuthDrawer(false)}>Checkout as Guest</button></p>
+                </div>
+              </>
+            )}
           </div>
         </aside>
       )}

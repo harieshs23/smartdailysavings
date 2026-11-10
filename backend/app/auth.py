@@ -11,6 +11,120 @@ from sqlalchemy import text
 from app.db import SessionLocal
 
 
+def generate_verification_token() -> str:
+    """Generate a secure random token for email verification."""
+    return secrets.token_urlsafe(32)
+
+
+def create_verification_token(neon_user_id: str, email: str) -> dict[str, Any]:
+    """Create a verification token for a user's email."""
+    token = generate_verification_token()
+    expires_at = datetime.utcnow() + timedelta(hours=24)
+
+    with SessionLocal() as db:
+        # Delete any existing verification tokens for this user
+        db.execute(
+            text(
+                """
+                DELETE FROM neon_auth.email_verification
+                WHERE "userId" = :user_id
+                """
+            ),
+            {"user_id": neon_user_id},
+        )
+
+        token_id = str(uuid.uuid4())
+        db.execute(
+            text(
+                """
+                INSERT INTO neon_auth.email_verification (
+                    id, token, "userId", email, "expiresAt", "createdAt", "updatedAt"
+                )
+                VALUES (:id, :token, :user_id, :email, :expires_at, NOW(), NOW())
+                """
+            ),
+            {
+                "id": token_id,
+                "token": token,
+                "user_id": neon_user_id,
+                "email": email,
+                "expires_at": expires_at,
+            },
+        )
+        db.commit()
+
+    return {
+        "token": token,
+        "expiresAt": expires_at.isoformat(),
+        "userId": neon_user_id,
+        "email": email,
+    }
+
+
+def verify_email_token(token: str) -> dict[str, Any] | None:
+    """Verify an email verification token and mark the user as verified."""
+    with SessionLocal() as db:
+        row = db.execute(
+            text(
+                """
+                SELECT v."userId", v.email, v."expiresAt", u."emailVerified"
+                FROM neon_auth.email_verification v
+                JOIN neon_auth."user" u ON u.id = v."userId"
+                WHERE v.token = :token
+                LIMIT 1
+                """
+            ),
+            {"token": token},
+        ).first()
+
+        if row is None:
+            return None
+
+        user_id, email, expires_at, already_verified = row[0], row[1], row[2], bool(row[3])
+
+        if datetime.utcnow() > expires_at:
+            # Token expired - delete it
+            db.execute(
+                text("DELETE FROM neon_auth.email_verification WHERE token = :token"),
+                {"token": token},
+            )
+            db.commit()
+            return None
+
+        # Mark user as verified
+        db.execute(
+            text(
+                """
+                UPDATE neon_auth."user"
+                SET "emailVerified" = TRUE, "updatedAt" = NOW()
+                WHERE id = :user_id
+                """
+            ),
+            {"user_id": user_id},
+        )
+
+        # Delete the used token
+        db.execute(
+            text("DELETE FROM neon_auth.email_verification WHERE token = :token"),
+            {"token": token},
+        )
+
+        db.commit()
+
+        return {
+            "userId": str(user_id),
+            "email": email,
+            "verified": True,
+        }
+
+    return None
+
+
+def resend_verification_email(neon_user_id: str, email: str) -> dict[str, Any]:
+    """Resend verification email by creating a new token."""
+    return create_verification_token(neon_user_id, email)
+
+
 def ensure_neon_user(email: str, name: str | None = None) -> str:
     with SessionLocal() as db:
         existing = db.execute(
