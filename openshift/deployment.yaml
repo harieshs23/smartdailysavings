@@ -224,3 +224,26 @@ spec:
     name: smartdailysavings-backend
   port:
     targetPort: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartdailysavings-config
+data:
+  POSTGRES_DB: "smartdailysavings"
+  POSTGRES_USER: "smartdailysavings"
+  DATABASE_URL: "postgresql://smartdailysavings:smartdailysavings@smartdailysavings-postgres:5432/smartdailysavings"
+  CELERY_BROKER_URL: "redis://smartdailysavings-redis:6379/0"
+  CELERY_RESULT_BACKEND: "redis://smartdailysavings-redis:6379/0"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+  MODEL_PROVIDER: "openai"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: smartdailysavings-secrets
+stringData:
+  POSTGRES_PASSWORD: "smartdailysavings"
+  NEON_API_KEY: ""
+  NEON_PROJECT_ID: ""
+  NEON_DATABASE_URL: ""

@@ -157,9 +157,13 @@ def get_deals(q: str = Query(..., min_length=1)):
 def register_user(payload: RegisterRequest):
     try:
         user = create_email_password_account(payload.email, payload.password, payload.name)
-        # Create verification token for the new user
-        create_verification_token(user["id"], user["email"])
-        return {"status": "success", "user": user, "message": "Registration successful. Please check your email to verify your account."}
+        verification = create_verification_token(user["id"], user["email"])
+        return {
+            "status": "success",
+            "user": user,
+            "verification": verification,
+            "message": "Registration successful. Please check your email to verify your account.",
+        }
     except Exception as exc:  # pragma: no cover - defensive guard
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -184,20 +188,22 @@ def verify_email(payload: VerifyEmailRequest):
 @app.post("/auth/resend-verification")
 def resend_verification(payload: ResendVerificationRequest):
     try:
-        # Find the user by email
         with SessionLocal() as db:
             row = db.execute(
                 text('SELECT id FROM neon_auth."user" WHERE LOWER(email) = LOWER(:email) LIMIT 1'),
                 {"email": payload.email},
             ).first()
-            
+
         if row is None:
-            # Don't reveal if email exists or not for security
             return {"status": "success", "message": "If the email exists, a verification email has been sent"}
-        
+
         user_id = str(row[0])
-        create_verification_token(user_id, payload.email)
-        return {"status": "success", "message": "Verification email sent"}
+        verification = create_verification_token(user_id, payload.email)
+        return {
+            "status": "success",
+            "message": "Verification email sent",
+            "verification": verification,
+        }
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

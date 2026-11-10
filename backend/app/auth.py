@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import logging
+import os
 import secrets
 import uuid
 from datetime import datetime, timedelta
 from typing import Any
+from urllib import request
+from urllib.parse import quote
 
 from sqlalchemy import text
 
 from app.db import SessionLocal
+
+logger = logging.getLogger(__name__)
 
 
 def generate_verification_token() -> str:
@@ -16,8 +23,57 @@ def generate_verification_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def get_frontend_base_url() -> str:
+    return os.getenv('FRONTEND_URL') or os.getenv('VITE_APP_URL') or 'http://localhost:5173'
+
+
+def send_verification_email(email: str, token: str) -> bool:
+    """Send a verification email via Resend if credentials are configured."""
+    api_key = os.getenv('RESEND_API_KEY')
+    if not api_key:
+        logger.warning('RESEND_API_KEY not set; skipping verification email delivery.')
+        return False
+
+    from_email = os.getenv('EMAIL_FROM', 'no-reply@smartdailysavings.local')
+    frontend_url = get_frontend_base_url().rstrip('/')
+    verification_url = f"{frontend_url}/?token={quote(token, safe='')}"
+
+    payload = {
+        'from': from_email,
+        'to': [email],
+        'subject': 'Verify your Smart Daily Savings account',
+        'html': (
+            '<p>Welcome to Smart Daily Savings.</p>'
+            '<p>Click the link below to verify your email address:</p>'
+            f'<p><a href="{verification_url}">{verification_url}</a></p>'
+            '<p>This link expires in 24 hours.</p>'
+        ),
+    }
+
+    req = request.Request(
+        'https://api.resend.com/emails',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+
+    try:
+        with request.urlopen(req, timeout=15) as response:
+            status = getattr(response, 'status', response.getcode())
+            if status in (200, 201, 202):
+                return True
+            logger.warning('Verification email returned unexpected status: %s', status)
+            return False
+    except Exception as exc:  # pragma: no cover - depends on external SMTP provider
+        logger.warning('Failed to send verification email: %s', exc)
+        return False
+
+
 def create_verification_token(neon_user_id: str, email: str) -> dict[str, Any]:
-    """Create a verification token for a user's email."""
+    """Create a verification token for a user's email and send the verification link."""
     token = generate_verification_token()
     expires_at = datetime.utcnow() + timedelta(hours=24)
 
@@ -53,11 +109,14 @@ def create_verification_token(neon_user_id: str, email: str) -> dict[str, Any]:
         )
         db.commit()
 
+    sent = send_verification_email(email, token)
+
     return {
         "token": token,
         "expiresAt": expires_at.isoformat(),
         "userId": neon_user_id,
         "email": email,
+        "emailSent": sent,
     }
 
 
